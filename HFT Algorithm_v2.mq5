@@ -17,8 +17,8 @@ CTrade trade;
 input double BuyLimitPrice = 0;  // Example price, adjust as needed
 input double SellLimitPrice = 0; // Example price, adjust as needed
 
-input int InpAtrPeriod = 14;    // ATR period
-input int InpAtrMultiplier = 5; // ATR multiplier
+input float InpAtrPeriod = 14;    // ATR period
+input float InpAtrMultiplier = 5; // ATR multiplier
 
 double lastStopLossArrayUp = -1;
 double lastStopLossArrayDn = -1;
@@ -52,7 +52,7 @@ bool IsTradingAllowed()
     datetime curTimeSeconds = (curTime % 86400); // seconds since midnight
 
     // Check if the current time is within the London or New York session times.
-    if ((curTimeSeconds >= londonOpen && curTimeSeconds <= londonClose))
+    if ((curTimeSeconds >= londonOpen || curTimeSeconds < londonClose) || (curTimeSeconds >= nyOpen && curTimeSeconds < nyClose))
         return true;
 
     return false;
@@ -79,7 +79,7 @@ void OnTick()
                 if (orderType == ORDER_TYPE_BUY_STOP || orderType == ORDER_TYPE_SELL_STOP)
                 {
                     datetime orderTime = OrderGetInteger(ORDER_TIME_SETUP);
-                    if (TimeCurrent() - orderTime > 600)
+                    if (TimeCurrent() - orderTime > 300)
                     {
                         trade.OrderDelete(ticket);
                     }
@@ -128,7 +128,7 @@ void OnTick()
 
     if (tradePlaced == false)
     {
-        double stopLossPips = 200.0;
+        double stopLossPips = 600.0;
         double stopLossPrice;
         double limitPriceGap = 400; // This needs to be in points, ensure it’s correct for your symbol
 
@@ -146,7 +146,7 @@ void OnTick()
             // Ensure the BuyStopPrice is above the current market price
             if (BuyStopPrice > askPrice)
             {
-                buyLimitTicket = trade.BuyStop(0.01, BuyStopPrice, _Symbol, stopLossPrice, 0); // Use BuyStop
+                buyLimitTicket = trade.BuyStop(0.02, BuyStopPrice, _Symbol, stopLossPrice, 0); // Use BuyStop
                 // If a buy stop order is placed successfully, delete any existing sell stop order
                 if (buyLimitTicket > 0 && sellLimitTicket > 0)
                 {
@@ -172,7 +172,7 @@ void OnTick()
             // Ensure the SellStopPrice is below the current market price
             if (SellStopPrice < bidPrice)
             {
-                sellLimitTicket = trade.SellStop(0.01, SellStopPrice, _Symbol, stopLossPrice, 0); // Use SellStop
+                sellLimitTicket = trade.SellStop(0.02, SellStopPrice, _Symbol, stopLossPrice, 0); // Use SellStop
                 // If a sell stop order is placed successfully, delete any existing buy stop order
                 if (sellLimitTicket > 0 && buyLimitTicket > 0)
                 {
