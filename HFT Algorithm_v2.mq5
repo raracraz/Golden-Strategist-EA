@@ -12,6 +12,10 @@ CTrade trade;
 #define SYDNEY_CLOSE 6   // 6 AM GMT
 #define TOKYO_OPEN 23    // 11 PM GMT
 #define TOKYO_CLOSE 8    // 8 AM GMT
+#define EXCLUDED_START 16  // 4 PM GMT
+#define EXCLUDED_END 20    // 8 PM GMT
+#define TRADING_START 12  // 3 PM GMT
+#define TRADING_END 14    // 5 PM GMT
 
 
 input double BuyLimitPrice = 0;  // Example price, adjust as needed
@@ -19,6 +23,9 @@ input double SellLimitPrice = 0; // Example price, adjust as needed
 
 input float InpAtrPeriod = 14;    // ATR period
 input float InpAtrMultiplier = 5; // ATR multiplier
+
+input float limitPriceGap = 400;
+input float stopLossPips = 600.0;
 
 double lastStopLossArrayUp = -1;
 double lastStopLossArrayDn = -1;
@@ -48,21 +55,39 @@ bool IsTradingAllowed()
     datetime sydneyClose = SYDNEY_CLOSE * 60 * 60;
     datetime tokyoOpen = TOKYO_OPEN * 60 * 60;
     datetime tokyoClose = TOKYO_CLOSE * 60 * 60;
+    datetime excludedStart = EXCLUDED_START * 60 * 60;
+    datetime excludedEnd = EXCLUDED_END * 60 * 60;
+    datetime tradingStart = (TRADING_START) * 60 * 60;
+    datetime tradingEnd = (TRADING_END + 1) * 60 * 60; // include the 17:00 hour
 
     datetime curTimeSeconds = (curTime % 86400); // seconds since midnight
-
-    // Check if the current time is within the London or New York session times.
-    if ((curTimeSeconds >= londonOpen || curTimeSeconds < londonClose) || (curTimeSeconds >= nyOpen && curTimeSeconds < nyClose))
+    
+    if (curTimeSeconds >= tradingStart && curTimeSeconds < tradingEnd)
         return true;
 
     return false;
+}
+
+bool CheckPositions()
+{
+    if(PositionsTotal() > 0) // if there are open positions
+        return true; // continue with logic
+    
+    return false; // no open positions
 }
 
 //+------------------------------------------------------------------+
 //| Expert tick function                                             |
 //+------------------------------------------------------------------+
 void OnTick()
-{
+{   
+    // It is outside trading hours, check for open positions
+    if (!IsTradingAllowed() && !CheckPositions())
+    {
+        Print("Outside trading hours and no open positions. Exiting function.");
+        return;
+    }
+    
     int rates_total = Bars(_Symbol, _Period);         // Get the number of bars in the current chart
     datetime Time[];                                  // Array to store the time values
     CopyTime(_Symbol, _Period, 0, rates_total, Time); // Copy the time values to the array
@@ -87,10 +112,6 @@ void OnTick()
             }
         }
     }
-
-    // Check if trading is allowed
-    if (!IsTradingAllowed())
-        return;
 
     Print("Trade Placed: ", tradePlaced);    // Print the value of tradePlaced
     Print("Can Place Buy: ", canPlaceBuy);   // Print the value of canPlaceBuy
@@ -125,12 +146,39 @@ void OnTick()
         canPlaceSell = true;
         lastStopLossArrayDn = ATRStopLossDnBuffer[0];
     }
+    
+    if (PositionsTotal() == 0 && OrdersTotal() == 0)
+    {
+        tradePlaced = false;
+    }
+
+    for (int i = PositionsTotal() - 1; i >= 0; i--)
+    {
+        ulong ticket = PositionGetTicket(i);
+        if (ticket != INVALID_HANDLE)
+        {
+            string symbol = PositionGetString(POSITION_SYMBOL);
+            if (symbol == _Symbol)
+            {
+                ENUM_POSITION_TYPE positionType = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+                switch (positionType)
+                {
+                case POSITION_TYPE_BUY:
+                    trade.PositionModify(ticket, ATRStopLossUpBuffer[0], PositionGetDouble(POSITION_TP));
+                    break;
+                case POSITION_TYPE_SELL:
+                    trade.PositionModify(ticket, ATRStopLossDnBuffer[0], PositionGetDouble(POSITION_TP));
+                    break;
+                default:
+                    break;
+                }
+            }
+        }
+    }
 
     if (tradePlaced == false)
     {
-        double stopLossPips = 600.0;
         double stopLossPrice;
-        double limitPriceGap = 400; // This needs to be in points, ensure it’s correct for your symbol
 
         double tickSize = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE);
 
@@ -186,33 +234,5 @@ void OnTick()
             }
         }
     }
-
-    if (PositionsTotal() == 0 && OrdersTotal() == 0)
-    {
-        tradePlaced = false;
-    }
-
-    for (int i = PositionsTotal() - 1; i >= 0; i--)
-    {
-        ulong ticket = PositionGetTicket(i);
-        if (ticket != INVALID_HANDLE)
-        {
-            string symbol = PositionGetString(POSITION_SYMBOL);
-            if (symbol == _Symbol)
-            {
-                ENUM_POSITION_TYPE positionType = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
-                switch (positionType)
-                {
-                case POSITION_TYPE_BUY:
-                    trade.PositionModify(ticket, ATRStopLossUpBuffer[0], PositionGetDouble(POSITION_TP));
-                    break;
-                case POSITION_TYPE_SELL:
-                    trade.PositionModify(ticket, ATRStopLossDnBuffer[0], PositionGetDouble(POSITION_TP));
-                    break;
-                default:
-                    break;
-                }
-            }
-        }
-    }
+    
 }
