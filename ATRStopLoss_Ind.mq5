@@ -95,8 +95,6 @@ int OnCalculate(const int rates_total,
       bars_calculated = limit;
       return(rates_total);
      }
-
-
    else
      {
       limit=prev_calculated-Length-1;

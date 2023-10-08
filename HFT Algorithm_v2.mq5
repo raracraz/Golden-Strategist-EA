@@ -18,11 +18,9 @@ CTrade trade;
 #define TRADING_END 14    // 5 PM GMT
 
 
-input double BuyLimitPrice = 0;  // Example price, adjust as needed
-input double SellLimitPrice = 0; // Example price, adjust as needed
-
-input float InpAtrPeriod = 14;    // ATR period
-input float InpAtrMultiplier = 5; // ATR multiplier
+input float InpAtrLength = 1;    // ATR Length
+input float InpAtrPeriod = 5;    // ATR Period
+input float InpAtrMultiplier = 1; // ATR multiplier
 
 input float limitPriceGap = 400;
 input float stopLossPips = 600.0;
@@ -40,6 +38,7 @@ ulong sellLimitTicket = 0;
 
 datetime buyLimitTime = 0;  // Track the time BuyStop was placed
 datetime sellLimitTime = 0; // Track the time SellStop was placed
+
 
 //+------------------------------------------------------------------+
 //| Check if it is allowed to trade according to the session times   |
@@ -119,8 +118,8 @@ void OnTick()
 
     double ATRStopLossUpBuffer[2];
     double ATRStopLossDnBuffer[2];
-    CopyBuffer(iCustom(_Symbol, _Period, "ATRStopLoss_Ind", InpAtrPeriod, 5, InpAtrMultiplier), 0, 0, 2, ATRStopLossUpBuffer);
-    CopyBuffer(iCustom(_Symbol, _Period, "ATRStopLoss_Ind", InpAtrPeriod, 5, InpAtrMultiplier), 1, 0, 2, ATRStopLossDnBuffer);
+    CopyBuffer(iCustom(_Symbol, _Period, "ATRStopLoss_Ind", InpAtrLength, InpAtrPeriod, InpAtrMultiplier), 0, 0, 2, ATRStopLossUpBuffer);
+    CopyBuffer(iCustom(_Symbol, _Period, "ATRStopLoss_Ind", InpAtrLength, InpAtrPeriod, InpAtrMultiplier), 1, 0, 2, ATRStopLossDnBuffer);
 
     double closeArray[2];
     if (CopyClose(_Symbol, _Period, 0, 2, closeArray) == -1)
