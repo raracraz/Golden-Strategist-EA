@@ -97,7 +97,7 @@ bool CheckPositions()
 //+------------------------------------------------------------------+
 void OnTick()
 {
-    // It is outside trading hours, check for open positions
+    It is outside trading hours, check for open positions
     if (!IsTradingAllowed() && !CheckPositions())
     {
         Print("Outside trading hours and no open positions. Exiting function.");
@@ -193,10 +193,14 @@ void OnTick()
                 {
                     double newBuySL = NormalizeDouble(ATRStopLossUpBuffer[0], _Digits); // Normalizing to match decimal places of _Digits
 
-                    if (newBuySL == currentSL || newBuySL < currentSL)
-                        return; // Exit if no modification is necessary
+                    // if (newBuySL == currentSL || newBuySL < currentSL)
+                    //     return; // Exit if no modification is necessary
+                    
 
-                    if (currentSL != newBuySL) // Checks if the current stop loss is different from the new stop loss value
+
+                    Print("Current SL: ", currentSL, " New SL: ", newBuySL);
+                    // ensure SL is not "1.7976931348623157e+308"
+                    if (currentSL != newBuySL && newBuySL != 1.7976931348623157e+308 ) // Checks if the current stop loss is different from the new stop loss value
                     {
                         if (trade.PositionModify(ticket, newBuySL, PositionGetDouble(POSITION_TP)))
                         {
@@ -209,10 +213,13 @@ void OnTick()
                 {
                     double newSellSL = NormalizeDouble(ATRStopLossDnBuffer[0], _Digits); // Normalizing to match decimal places of _Digits
 
-                    if (newSellSL == currentSL || newSellSL > currentSL)
-                        return; // Exit if no modification is necessary
+                    // if (newSellSL == currentSL || newSellSL > currentSL)
+                    //     return; // Exit if no modification is necessary
 
-                    if (currentSL != newSellSL) // Checks if the current stop loss is different from the new stop loss value
+                    // print the current stop loss and the new stop loss
+                    Print("Current SL: ", currentSL, " New SL: ", newSellSL);
+
+                    if (currentSL != newSellSL && newSellSL != 1.7976931348623157e+308) // Checks if the current stop loss is different from the new stop loss value
                     {
                         if (trade.PositionModify(ticket, newSellSL, PositionGetDouble(POSITION_TP)))
                         {
