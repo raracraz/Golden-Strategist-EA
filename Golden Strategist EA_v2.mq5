@@ -1,5 +1,6 @@
 #include <Trade\Trade.mqh>
 #include <Datetime.mqh>
+#resource "\\ATRStopLoss_Ind.ex5"
 
 CTrade trade;
 
@@ -118,8 +119,8 @@ void OnTick()
 
     double ATRStopLossUpBuffer[2];
     double ATRStopLossDnBuffer[2];
-    CopyBuffer(iCustom(_Symbol, _Period, "ATRStopLoss_Ind", InpAtrLength, InpAtrPeriod, InpAtrMultiplier), 0, 0, 2, ATRStopLossUpBuffer);
-    CopyBuffer(iCustom(_Symbol, _Period, "ATRStopLoss_Ind", InpAtrLength, InpAtrPeriod, InpAtrMultiplier), 1, 0, 2, ATRStopLossDnBuffer);
+    CopyBuffer(iCustom(_Symbol, _Period, "::ATRStopLoss_Ind.ex5", InpAtrLength, InpAtrPeriod, InpAtrMultiplier), 0, 0, 2, ATRStopLossUpBuffer);
+    CopyBuffer(iCustom(_Symbol, _Period, "::ATRStopLoss_Ind.ex5", InpAtrLength, InpAtrPeriod, InpAtrMultiplier), 1, 0, 2, ATRStopLossDnBuffer);
 
     double closeArray[2];
     if (CopyClose(_Symbol, _Period, 0, 2, closeArray) == -1)

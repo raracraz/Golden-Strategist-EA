@@ -78,8 +78,10 @@ bool IsTradingAllowed()
 
     datetime curTimeSeconds = (curTime % 86400); // seconds since midnight
 
-    if (curTimeSeconds >= tradingStart && curTimeSeconds < tradingEnd)
-        return true;
+    //  if (curTimeSeconds >= tradingStart && curTimeSeconds < tradingEnd)
+    //     return true;
+        if (curTimeSeconds >= LONDON_OPEN && curTimeSeconds < NY_CLOSE)
+            return true;
 
     return false;
 }
